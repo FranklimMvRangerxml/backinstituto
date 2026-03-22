@@ -20,14 +20,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // =============================
 // CONFIG DE SERVICIOS
+//http://localhost:4001 - http://localhost:4002
 // =============================
 const services = {
     auth: {
-        target: process.env.AUTH_SERVICE_URL || "http://localhost:4001",
+        target: process.env.AUTH_SERVICE_URL || "https://backinstituto-production.up.railway.app/",
         name: "auth-service",
     },
     dashboard: {
-        target: process.env.DASHBOARD_SERVICE_URL || "http://localhost:4002",
+        target: process.env.DASHBOARD_SERVICE_URL || "https://backinstituto-production.up.railway.app/",
         name: "dashboard-service",
     },
 };

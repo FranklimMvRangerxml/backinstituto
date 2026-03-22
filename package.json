@@ -5,11 +5,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev:gateway": "nodemon gateway/server.js",
-    "dev:auth": "nodemon services/auth-service/server.js",
-    "dev:dashboard": "nodemon services/dasboart-service/server.js",
-    "dev:all": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:dashboard\" ",
-    "install:all": "npm install"
+   "start": "node gateway/server.js",
+  "dev:gateway": "nodemon gateway/server.js",
+  "dev:auth": "nodemon services/auth-service/server.js",
+  "dev:dashboard": "nodemon services/dasboart-service/server.js",
+  "dev:all": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:dashboard\""
+
   },
   "keywords": [],
   "author": "",

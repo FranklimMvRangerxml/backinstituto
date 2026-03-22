@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "node ./gateway/server.js",
+    "start": "node ./gateway/src/server.js",
     "dev:gateway": "nodemon ./gateway/server.js",
     "dev:auth": "nodemon ./services/auth-service/server.js",
     "dev:dashboard": "nodemon ./services/dashboard-service/server.js",

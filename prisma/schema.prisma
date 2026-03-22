@@ -1,0 +1,427 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum EstadoActivo {
+  activo
+  inactive
+}
+
+enum EstadoGeneral {
+  activo
+  inactivo
+}
+
+enum IntervaloPlan {
+  mensual
+  anual
+  trial
+}
+
+enum EstadoSuscripcion {
+  activo
+  cancelado
+  expirado
+}
+
+enum MetodoPago {
+  transferencia
+  stripe
+  paypal
+  manual
+}
+
+enum TipoPago {
+  suscripcion
+  renovacion
+  upgrade
+}
+
+enum EstadoPago {
+  pendiente
+  verificando
+  exitoso
+  fallido
+}
+
+enum RolUsuario {
+  profesor
+  estudiante
+}
+
+enum EstadoSesion {
+  activo
+  inactivo
+}
+
+enum CategoriaCurso {
+  curso1
+  curso2
+  curso3
+  curso4
+  curso5
+}
+
+enum ModuloCurso {
+  Princiante
+  Intermedio
+  Avanzado
+}
+
+enum EstadoCurso {
+  activo
+  finalizado
+  cancelado
+}
+
+enum EstadoClase {
+  programada
+  realizada
+  cancelada
+}
+
+enum ClaseActual {
+  clase_1
+  clase_2
+  clase_3
+  clase_4
+  clase_5
+  clase_6
+  clase_7
+  clase_8
+  clase_9
+  clase_10
+}
+
+enum TipoMaterial {
+  audio
+  video
+  excel
+  pdf
+  word
+  otro
+}
+
+enum EstadoMaterial {
+  activo
+  inactivo
+}
+
+enum EstadoMatricula {
+  activo
+  finalizado
+  retirado
+}
+
+//////////////////////
+// MODELOS BASE
+//////////////////////
+
+model Institucion {
+  id                Int          @id @default(autoincrement())
+  email             String       @unique
+  passwordHash      String
+  nombreInstitucion String
+  nit               String?      
+  direccion         String?
+  telefono          String?
+  pais              String?
+  ciudad            String?
+  suscripcion       Int?
+  tipo              String?
+  nombreadmin       String?
+  celularadmin      String?
+  rol               String?
+  obcional          String?
+  codigoOTP         String?
+  activo            EstadoActivo
+  fechaRegistro     DateTime     @default(now())
+  usuarios        Usuario[]
+  cursos          Curso[]
+  pagos           Pago[]
+  institucionPlan InstitucionPlan[]
+  plan Plan? @relation(fields: [suscripcion], references: [id])
+}
+
+model Plan {
+  id        Int           @id @default(autoincrement())
+  nombre    String
+  codigo    String
+  price     Decimal
+  currency  String
+  interval  IntervaloPlan
+  maxDays   Int
+  createdAt DateTime?
+  estado    EstadoGeneral
+
+  pagos           Pago[]
+  institucionPlan InstitucionPlan[]
+   instituciones Institucion[]
+}
+
+model Usuario {
+  id              Int          @id @default(autoincrement())
+  nombreCompleto  String
+  email           String       @unique
+  passwordHash    String
+  telefono        String?
+  ciudad          String?
+  rol             RolUsuario
+  fechaNacimiento DateTime?
+  nivelEducativo  String?
+  institucionId   Int
+  codigoOTP       String?
+  activo          EstadoActivo
+  fechaRegistro   DateTime     @default(now())
+  institucion Institucion @relation(fields: [institucionId], references: [id])
+  sesiones       Session[]
+  cursosProfesor Curso[]     @relation("ProfesorCurso")
+  matriculas     Matricula[]
+  resultados     Resultado[]
+  reportes       Reporte[]
+}
+
+//////////////////////
+// MODELOS INTERMEDIOS
+//////////////////////
+
+model InstitucionPlan {
+  id Int @id @default(autoincrement())
+
+  institucionId Int
+  planId        Int
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  estado EstadoSuscripcion
+
+  institucion Institucion @relation(fields: [institucionId], references: [id])
+  plan        Plan        @relation(fields: [planId], references: [id])
+
+  pagos Pago[]
+}
+
+model Pago {
+  id Int @id @default(autoincrement())
+
+  institucionId     Int
+  planId            Int?
+  institucionPlanId Int?
+
+  monto    Decimal
+  currency String?
+
+  metodoPago MetodoPago
+  tipoPago   TipoPago
+  estado     EstadoPago
+
+  referenciaPago String  @unique
+  banco          String?
+
+  reciboFile     String?
+  comprobanteUrl String?
+
+  fechaPago         DateTime  @default(now())
+  fechaVerificacion DateTime?
+
+  institucion     Institucion      @relation(fields: [institucionId], references: [id])
+  plan            Plan?            @relation(fields: [planId], references: [id])
+  institucionPlan InstitucionPlan? @relation(fields: [institucionPlanId], references: [id])
+}
+
+//////////////////////
+// SESIONES
+//////////////////////
+
+model Session {
+  id        Int          @id @default(autoincrement())
+  ip        String?
+  usuarioId Int
+  fecha     DateTime
+  navegador String?
+  status    EstadoSesion
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+//////////////////////
+// CURSOS
+//////////////////////
+
+model Curso {
+  id            Int @id @default(autoincrement())
+  institucionId Int
+  profesorId    Int
+
+  img         String?
+  nombreCurso String
+  categoria   CategoriaCurso
+  modulo      ModuloCurso
+  idioma      String
+  descripcion String?
+
+  fechaInicio DateTime
+  fechaFin    DateTime
+
+  estado        EstadoCurso @default(activo)
+  fechaCreacion DateTime    @default(now())
+
+  institucion Institucion @relation(fields: [institucionId], references: [id])
+  profesor    Usuario     @relation("ProfesorCurso", fields: [profesorId], references: [id])
+
+  clases       Clase[]
+  evaluaciones Evaluacion[]
+  matriculas   Matricula[]
+  reportes     Reporte[]
+}
+
+//////////////////////
+// CLASES
+//////////////////////
+
+model Clase {
+  id           Int  @id @default(autoincrement())
+  cursoId      Int
+  estudianteId Int?
+
+  img         String?
+  titulo      String
+  descripcion String?
+
+  fechaClase DateTime
+  linkMeet   String?
+
+  duracionMinutos Int         @default(60)
+  claseActual     ClaseActual
+  estadoClase     EstadoClase @default(programada)
+
+  curso      Curso             @relation(fields: [cursoId], references: [id])
+  materiales MaterialEstudio[]
+}
+
+model MaterialEstudio {
+  id           Int     @id @default(autoincrement())
+  titulo       String?
+  detalle      String?
+  linkMaterial String?
+
+  tipo        TipoMaterial
+  claseActual ClaseActual
+
+  claseMaterialId Int
+  estadoMaterial  EstadoMaterial
+
+  clase Clase @relation(fields: [claseMaterialId], references: [id])
+}
+
+//////////////////////
+// EVALUACIONES
+//////////////////////
+
+model Evaluacion {
+  id      Int @id @default(autoincrement())
+  cursoId Int
+
+  titulo      String
+  descripcion String?
+
+  codigoEvaluacion String?
+  fechaCreacion    DateTime  @default(now())
+  fechaLimite      DateTime?
+
+  porcentajeCurso Decimal
+
+  curso Curso @relation(fields: [cursoId], references: [id])
+
+  preguntas  Pregunta[]
+  resultados Resultado[]
+}
+
+model Pregunta {
+  id           Int @id @default(autoincrement())
+  evaluacionId Int
+
+  pregunta   String
+  respuestaA String
+  respuestaB String
+  respuestaC String
+  respuestaD String
+
+  respuestaCorrecta String
+  puntaje           Float
+
+  status EstadoGeneral
+
+  evaluacion Evaluacion @relation(fields: [evaluacionId], references: [id])
+}
+
+//////////////////////
+// RESULTADOS
+//////////////////////
+
+model Resultado {
+  id Int @id @default(autoincrement())
+
+  evaluacionId Int
+  estudianteId Int
+
+  respuestasJson  String
+  puntajeObtenido Decimal
+
+  fechaRealizacion DateTime @default(now())
+
+  evaluacion Evaluacion @relation(fields: [evaluacionId], references: [id])
+  estudiante Usuario    @relation(fields: [estudianteId], references: [id])
+
+  @@unique([evaluacionId, estudianteId])
+}
+
+//////////////////////
+// MATRICULAS
+//////////////////////
+
+model Matricula {
+  id Int @id @default(autoincrement())
+
+  cursoId      Int
+  estudianteId Int
+
+  fechaMatricula DateTime        @default(now())
+  estado         EstadoMatricula @default(activo)
+
+  curso      Curso   @relation(fields: [cursoId], references: [id])
+  estudiante Usuario @relation(fields: [estudianteId], references: [id])
+
+  @@unique([cursoId, estudianteId])
+}
+
+//////////////////////
+// REPORTES
+//////////////////////
+
+model Reporte {
+  id Int @id @default(autoincrement())
+
+  cursoId      Int
+  estudianteId Int
+
+  fechaGeneracion DateTime @default(now())
+  promedioFinal   Decimal?
+  aprobado        Boolean?
+
+  codigoCertificado String  @unique
+  pdfUrl            String?
+
+  curso      Curso   @relation(fields: [cursoId], references: [id])
+  estudiante Usuario @relation(fields: [estudianteId], references: [id])
+}

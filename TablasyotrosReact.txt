@@ -1,0 +1,895 @@
+-----------------------------------
+Inserts de tablas
+INSERT INTO Plan 
+(nombre, codigo, price, currency, interval, maxDays, createdAt, estado)
+VALUES
+('Plan Trial', 'plan_trial', 0.0, 'USD', 'trial', 15, NOW(), 'ACTIVO'),
+('Plan mensual', 'plan_mensual', 100.99, 'USD', 'mensual', 30, NOW(), 'ACTIVO'),
+('Plan Anual', 'plan_anual', 500.99, 'USD', 'anual', 365, NOW(), 'ACTIVO');
+
+Enum IntervaloPlan {
+  mensual
+  anual
+  trial
+}
+-----------------------------------------------------------
+Sql actualiza
+UPDATE plan
+SET maxDays = 30
+WHERE id = 14;
+
+#####################################################
+ id int [pk, increment]
+  email varchar [unique] =>ok
+  passwordHash varchar
+  nombreInstitucion varchar =>ok
+  nit varchar [unique]
+  direccion text
+  telefono varchar
+  pais varchar
+  ciudad varchar
+  suscripcion int
+  tipo varchar
+  obcional varchar
+  codigoOTP varchar =>ok
+  activo EstadoActivo
+  fechaRegistro datetime
+
+  #####################################################
+
+import { useState } from "react";
+
+const DB_SCHEMA = {
+instituciones: {
+color: "#FF6B35",
+icon: "🏛️",
+fields: {
+id: { type: "PK", desc: "integer" },
+email: { type: "unique", desc: "varchar(100)" },
+password_hash: { type: "string", desc: "varchar(255)" },
+nombre_institucion: { type: "string", desc: "varchar(200)" },
+nit: { type: "unique", desc: "varchar(50)" },
+direccion: { type: "string", desc: "text" },
+telefono: { type: "string", desc: "varchar(20)" },
+pais: { type: "string", desc: "varchar(100)" },
+ciudad: { type: "string", desc: "varchar(100)" },
+suscripcion: { type: "FK", desc: "integer" },
+activo: { type: "enum", desc: "activo | inactive" },
+fecha_registro: { type: "timestamp", desc: "default: now()" },
+},
+},
+planes: {
+color: "#4ECDC4",
+icon: "📋",
+fields: {
+idplanes: { type: "PK", desc: "integer" },
+nombre: { type: "string", desc: "varchar(100)" },
+codigo: { type: "string", desc: "varchar(100)" },
+price: { type: "decimal", desc: "decimal(10,2)" },
+currency: { type: "string", desc: "varchar(10)" },
+interval: { type: "enum", desc: "mensual | anual | trial" },
+max_days: { type: "integer", desc: "integer" },
+created_at: { type: "timestamp", desc: "timestamp" },
+estado: { type: "enum", desc: "activo | inactivo" },
+},
+},
+InstitucionPlan: {
+color: "#A8E6CF",
+icon: "🔗",
+fields: {
+id: { type: "PK", desc: "integer" },
+id_institucion: { type: "FK", desc: "→ instituciones.id" },
+id_plan: { type: "FK", desc: "→ planes.idplanes" },
+period_start: { type: "timestamp", desc: "timestamp" },
+period_end: { type: "timestamp", desc: "timestamp" },
+estado: { type: "enum", desc: "activo | cancelado | expirado" },
+},
+},
+pagos: {
+color: "#FFD93D",
+icon: "💳",
+fields: {
+id: { type: "PK", desc: "integer" },
+institucion_id: { type: "FK", desc: "→ instituciones.id" },
+plan_id: { type: "FK", desc: "→ planes.idplanes" },
+institucion_plan_id: { type: "FK", desc: "→ InstitucionPlan.id" },
+monto: { type: "decimal", desc: "decimal(10,2)" },
+currency: { type: "string", desc: "varchar(10)" },
+metodo_pago: { type: "enum", desc: "transferencia | stripe | paypal | manual" },
+tipo_pago: { type: "enum", desc: "suscripcion | renovacion | upgrade" },
+estado: { type: "enum", desc: "pendiente | verificando | exitoso | fallido" },
+referencia_pago: { type: "unique", desc: "varchar(100)" },
+banco: { type: "string", desc: "varchar(100)" },
+reciboFile: { type: "string", desc: "varchar(200)" },
+comprobante_url: { type: "string", desc: "text" },
+fecha_pago: { type: "timestamp", desc: "default: now()" },
+fecha_verificacion: { type: "timestamp", desc: "timestamp" },
+},
+},
+usuarios: {
+color: "#C77DFF",
+icon: "👤",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+nombre_completo: { type: "string", desc: "varchar(200)" },
+email: { type: "unique", desc: "varchar(100)" },
+password_hash: { type: "string", desc: "varchar(255)" },
+telefono: { type: "string", desc: "varchar(20)" },
+ciudad: { type: "string", desc: "varchar(20)" },
+rol: { type: "enum", desc: "profesor | estudiante" },
+fecha_nacimiento: { type: "date", desc: "date" },
+nivel_educativo: { type: "string", desc: "varchar(100)" },
+institucion_id: { type: "FK", desc: "→ instituciones.id" },
+codigoOTP: { type: "string", desc: "varchar(200)" },
+activo: { type: "enum", desc: "activo | inactive" },
+fecha_registro: { type: "timestamp", desc: "default: now()" },
+},
+},
+session: {
+color: "#74B9FF",
+icon: "🔐",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+ip: { type: "string", desc: "varchar(100)" },
+id_Usuario: { type: "FK", desc: "→ usuarios.id" },
+fecha: { type: "datetime", desc: "datetime" },
+navegador: { type: "string", desc: "varchar(200)" },
+status: { type: "enum", desc: "activo | inactivo" },
+},
+},
+cursos: {
+color: "#FD7272",
+icon: "📚",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+institucion_id: { type: "FK", desc: "→ instituciones.id" },
+img: { type: "string", desc: "varchar(200)" },
+profesor_id: { type: "FK", desc: "→ usuarios.id" },
+estudiante_id: { type: "FK", desc: "→ usuarios.id" },
+nombre_curso: { type: "string", desc: "varchar(200)" },
+categoria: { type: "enum", desc: "curso1..curso5" },
+modulo: { type: "enum", desc: "Principiante | Intermedio | Avanzado" },
+idioma: { type: "string", desc: "ingles | frances | aleman | japones" },
+descripcion: { type: "string", desc: "text" },
+fecha_inicio: { type: "date", desc: "date" },
+fecha_fin: { type: "date", desc: "date" },
+estado: { type: "enum", desc: "activo | finalizado | cancelado" },
+fecha_creacion: { type: "timestamp", desc: "default: now()" },
+},
+},
+clases: {
+color: "#FFEAA7",
+icon: "🎓",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+curso_id: { type: "FK", desc: "→ cursos.id" },
+estudiante_id: { type: "FK", desc: "→ usuarios.id" },
+img: { type: "string", desc: "varchar(200)" },
+titulo: { type: "string", desc: "varchar(200)" },
+descripcion: { type: "string", desc: "text" },
+fecha_clase: { type: "datetime", desc: "datetime" },
+link_meet: { type: "string", desc: "varchar(200)" },
+material_estudio: { type: "FK", desc: "integer(200)" },
+duracion_minutos: { type: "integer", desc: "default: 60" },
+ClaseActual: { type: "enum", desc: "clase_1..clase_10" },
+estadoclase: { type: "enum", desc: "programada | realizada | cancelada" },
+},
+},
+MaterialEstudio: {
+color: "#55EFC4",
+icon: "📄",
+fields: {
+idMaterial: { type: "PK", desc: "integer(20)" },
+titulo: { type: "string", desc: "varchar(100)" },
+detalle: { type: "string", desc: "varchar" },
+linkMaterial: { type: "string", desc: "varchar(200)" },
+tipo: { type: "enum", desc: "audio | video | excel | pdf | word | otro" },
+ClaseActual: { type: "enum", desc: "clase_1..clase_10" },
+claseMAterialya: { type: "FK", desc: "→ clases.id" },
+estadoMAterial: { type: "enum", desc: "activo | inactivo" },
+},
+},
+evaluaciones: {
+color: "#FDCB6E",
+icon: "📝",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+curso_id: { type: "FK", desc: "→ cursos.id" },
+titulo: { type: "string", desc: "varchar(200)" },
+descripcion: { type: "string", desc: "text" },
+codigoEvaluacion: { type: "string", desc: "varchar(10)" },
+fecha_creacion: { type: "timestamp", desc: "default: now()" },
+fecha_limite: { type: "date", desc: "date" },
+preguntas_json: { type: "FK", desc: "→ preguntas.idPreguntas" },
+porcentaje_curso: { type: "decimal", desc: "decimal(5,2) 0-100" },
+},
+},
+preguntas: {
+color: "#E17055",
+icon: "❓",
+fields: {
+idPreguntas: { type: "PK", desc: "integer(20)" },
+Pregunta: { type: "string", desc: "longtext" },
+respuestaA: { type: "string", desc: "varchar(200)" },
+respuestaB: { type: "string", desc: "varchar(200)" },
+respuestaC: { type: "string", desc: "varchar(200)" },
+respuestaD: { type: "string", desc: "varchar(200)" },
+repuestaCorrecta: { type: "string", desc: "varchar(200)" },
+puntaje: { type: "decimal", desc: "double" },
+status: { type: "enum", desc: "activo | inactivo" },
+},
+},
+resultados: {
+color: "#00B894",
+icon: "📊",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+evaluacion_id: { type: "FK", desc: "→ evaluaciones.id" },
+estudiante_id: { type: "FK", desc: "→ usuarios.id" },
+respuestas_json: { type: "string", desc: "text [{pregunta,respuesta}]" },
+puntaje_obtenido: { type: "decimal", desc: "decimal(5,2)" },
+fecha_realizacion: { type: "timestamp", desc: "default: now()" },
+},
+},
+matriculas: {
+color: "#0984E3",
+icon: "📌",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+curso_id: { type: "FK", desc: "→ cursos.id" },
+estudiante_id: { type: "FK", desc: "→ usuarios.id" },
+fecha_matricula: { type: "timestamp", desc: "default: now()" },
+estado: { type: "enum", desc: "activo | finalizado | retirado" },
+},
+},
+reportes: {
+color: "#6C5CE7",
+icon: "🏆",
+fields: {
+id: { type: "PK", desc: "integer(20)" },
+curso_id: { type: "FK", desc: "→ cursos.id" },
+estudiante_id: { type: "FK", desc: "→ usuarios.id" },
+fecha_generacion: { type: "timestamp", desc: "default: now()" },
+promedio_final: { type: "decimal", desc: "decimal(5,2)" },
+aprobado: { type: "boolean", desc: "boolean" },
+codigo_certificado: { type: "unique", desc: "varchar(50)" },
+pdf_url: { type: "string", desc: "text" },
+},
+},
+};
+
+const RELATIONS = [
+{ from: "InstitucionPlan", to: "instituciones", label: "id_institucion → id" },
+{ from: "InstitucionPlan", to: "planes", label: "id_plan → idplanes" },
+{ from: "pagos", to: "instituciones", label: "institucion_id → id" },
+{ from: "pagos", to: "planes", label: "plan_id → idplanes" },
+{ from: "pagos", to: "InstitucionPlan", label: "institucion_plan_id → id" },
+{ from: "usuarios", to: "instituciones", label: "institucion_id → id" },
+{ from: "session", to: "usuarios", label: "id_Usuario → id" },
+{ from: "cursos", to: "instituciones", label: "institucion_id → id" },
+{ from: "cursos", to: "usuarios", label: "profesor_id → id" },
+{ from: "cursos", to: "usuarios", label: "estudiante_id → id" },
+{ from: "clases", to: "cursos", label: "curso_id → id" },
+{ from: "MaterialEstudio", to: "clases", label: "claseMAterialya → id" },
+{ from: "evaluaciones", to: "cursos", label: "curso_id → id" },
+{ from: "preguntas", to: "evaluaciones", label: "idPreguntas → preguntas_json" },
+{ from: "resultados", to: "evaluaciones", label: "evaluacion_id → id" },
+{ from: "resultados", to: "usuarios", label: "estudiante_id → id" },
+{ from: "matriculas", to: "cursos", label: "curso_id → id" },
+{ from: "matriculas", to: "usuarios", label: "estudiante_id → id" },
+{ from: "reportes", to: "cursos", label: "curso_id → id" },
+{ from: "reportes", to: "usuarios", label: "estudiante_id → id" },
+];
+
+const SAMPLE_JSON = {
+institucion: {
+id: 1,
+nombre_institucion: "Academia Global Languages",
+email: "admin@academiagl.com",
+nit: "900123456-7",
+ciudad: "Bogotá",
+pais: "Colombia",
+activo: "activo",
+plan_activo: {
+id: 3,
+nombre: "Basic",
+interval: "mensual",
+period_start: "2025-01-01T00:00:00Z",
+period_end: "2025-02-01T00:00:00Z",
+estado: "activo",
+},
+cursos: [
+{
+id: 10,
+nombre_curso: "Inglés Principiante A1",
+modulo: "Principiante",
+idioma: "ingles",
+estado: "activo",
+fecha_inicio: "2025-01-10",
+fecha_fin: "2025-06-10",
+profesor: {
+id: 5,
+nombre_completo: "María López",
+email: "mlopez@academia.com",
+rol: "profesor",
+},
+estudiantes: [
+{
+id: 20,
+nombre_completo: "Juan García",
+rol: "estudiante",
+matricula: { estado: "activo", fecha_matricula: "2025-01-10T08:00:00Z" },
+},
+{
+id: 21,
+nombre_completo: "Ana Torres",
+rol: "estudiante",
+matricula: { estado: "activo", fecha_matricula: "2025-01-11T09:30:00Z" },
+},
+],
+clases: [
+{
+id: 100,
+titulo: "Introducción al Inglés",
+ClaseActual: "clase_1",
+estadoclase: "realizada",
+fecha_clase: "2025-01-15T10:00:00Z",
+duracion_minutos: 60,
+materiales: [
+{
+idMaterial: 1,
+titulo: "Presentación Clase 1",
+tipo: "pdf",
+linkMaterial: "https://cdn.academia.com/clase1.pdf",
+estadoMAterial: "activo",
+},
+],
+},
+],
+evaluaciones: [
+{
+id: 50,
+titulo: "Evaluación Parcial 1",
+codigoEvaluacion: "EV-2025-01",
+porcentaje_curso: 30.0,
+fecha_limite: "2025-02-15",
+preguntas: [
+{
+idPreguntas: 1,
+Pregunta: "¿Cómo se dice 'hola' en inglés?",
+respuestaA: "Hello",
+respuestaB: "Goodbye",
+respuestaC: "Thanks",
+respuestaD: "Sorry",
+repuestaCorrecta: "respuestaA",
+puntaje: 10,
+},
+],
+resultados: [
+{
+id: 200,
+estudiante_id: 20,
+puntaje_obtenido: 85.5,
+fecha_realizacion: "2025-02-10T14:00:00Z",
+respuestas_json: [{ pregunta: 1, respuesta: "respuestaA" }],
+},
+],
+},
+],
+reportes: [
+{
+id: 300,
+estudiante_id: 20,
+promedio_final: 85.5,
+aprobado: true,
+codigo_certificado: "CERT-2025-010020",
+pdf_url: "https://cdn.academia.com/certs/CERT-2025-010020.pdf",
+},
+],
+},
+],
+},
+};
+
+const TYPE_COLORS = {
+PK: "#FFD93D",
+FK: "#74B9FF",
+unique: "#A8E6CF",
+enum: "#DDA0DD",
+string: "#E8E8E8",
+integer: "#B2DFDB",
+decimal: "#FFCCBC",
+timestamp: "#CFD8DC",
+datetime: "#CFD8DC",
+date: "#CFD8DC",
+boolean: "#C8E6C9",
+};
+
+export default function SchemaViewer() {
+const [activeTab, setActiveTab] = useState("tables");
+const [selectedTable, setSelectedTable] = useState(null);
+const [searchTerm, setSearchTerm] = useState("");
+const [jsonExpanded, setJsonExpanded] = useState({});
+
+const tables = Object.keys(DB_SCHEMA);
+const filtered = tables.filter((t) =>
+t.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+const getRelationsFor = (tableName) => {
+return RELATIONS.filter(
+(r) => r.from === tableName || r.to === tableName
+);
+};
+
+const toggleJson = (path) => {
+setJsonExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
+};
+
+const JsonRenderer = ({ data, depth = 0, path = "root" }) => {
+if (data === null || data === undefined) return <span style={{ color: "#636e72" }}>null</span>;
+if (typeof data === "boolean") return <span style={{ color: "#00b894" }}>{String(data)}</span>;
+if (typeof data === "number") return <span style={{ color: "#fdcb6e" }}>{data}</span>;
+if (typeof data === "string") return <span style={{ color: "#fd79a8" }}>"{data}"</span>;
+
+if (Array.isArray(data)) {
+const isExpanded = jsonExpanded[path] !== false;
+return (
+<span>
+    <button onClick={()=> toggleJson(path)}
+        style={{ background: "none", border: "none", color: "#74b9ff", cursor: "pointer", fontFamily: "monospace",
+        fontSize: "13px" }}
+        >
+        {isExpanded ? "▼" : "▶"} [{data.length}]
+    </button>
+    {isExpanded && (
+    <div style={{ paddingLeft: "16px" , borderLeft: "1px solid #2d3436" }}>
+        {data.map((item, i) => (
+        <div key={i} style={{ margin: "2px 0" }}>
+            <span style={{ color: "#636e72" }}>{i}: </span>
+            <JsonRenderer data={item} depth={depth + 1} path={`${path}.${i}`} />
+            {i < data.length - 1 && <span style={{ color: "#636e72" }}>,
+</span>}
+</div>
+))}
+</div>
+)}
+</span>
+);
+}
+
+if (typeof data === "object") {
+const keys = Object.keys(data);
+const isExpanded = jsonExpanded[path] !== false;
+return (
+<span>
+    <button onClick={()=> toggleJson(path)}
+        style={{ background: "none", border: "none", color: "#74b9ff", cursor: "pointer", fontFamily: "monospace",
+        fontSize: "13px" }}
+        >
+        {isExpanded ? "▼" : "▶"} {"{"}…{"}"}
+    </button>
+    {isExpanded && (
+    <div style={{ paddingLeft: "16px" , borderLeft: "1px solid #2d3436" }}>
+        {keys.map((key, i) => (
+        <div key={key} style={{ margin: "2px 0" }}>
+            <span style={{ color: "#a29bfe" }}>"{key}"</span>
+            <span style={{ color: "#dfe6e9" }}>: </span>
+            <JsonRenderer data={data[key]} depth={depth + 1} path={`${path}.${key}`} />
+            {i < keys.length - 1 && <span style={{ color: "#636e72" }}>,
+</span>}
+</div>
+))}
+</div>
+)}
+</span>
+);
+}
+return <span>{String(data)}</span>;
+};
+
+return (
+<div style={{ minHeight: "100vh" , background: "#0a0e1a" , fontFamily: "'JetBrains Mono', 'Fira Code', monospace" ,
+    color: "#dfe6e9" , padding: "0" , }}>
+    {/* Header */}
+    <div style={{ background: "linear-gradient(135deg, #0f1b35 0%, #1a0a2e 50%, #0d1b2a 100%)" ,
+        borderBottom: "1px solid #1e3a5f" , padding: "24px 32px" , display: "flex" , alignItems: "center" ,
+        justifyContent: "space-between" , flexWrap: "wrap" , gap: "16px" , }}>
+        <div>
+            <div style={{ fontSize: "11px" , color: "#74b9ff" , letterSpacing: "3px" , textTransform: "uppercase" ,
+                marginBottom: "6px" }}>
+                ◈ DATABASE SCHEMA EXPLORER
+            </div>
+            <h1 style={{ margin: 0, fontSize: "26px" , fontWeight: "800" , color: "#fff" , letterSpacing: "-0.5px" }}>
+                LMS Platform · Schema v1.0
+            </h1>
+            <div style={{ fontSize: "12px" , color: "#636e72" , marginTop: "4px" }}>
+                {tables.length} tablas · {RELATIONS.length} relaciones · MySQL
+            </div>
+        </div>
+        <div style={{ display: "flex" , gap: "8px" }}>
+            {[
+            { key: "tables", label: "📊 Tablas", count: tables.length },
+            { key: "relations", label: "🔗 Relaciones", count: RELATIONS.length },
+            { key: "json", label: "{ } JSON Model", count: null },
+            ].map((tab) => (
+            <button key={tab.key} onClick={()=> setActiveTab(tab.key)}
+                style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid",
+                borderColor: activeTab === tab.key ? "#74b9ff" : "#1e3a5f",
+                background: activeTab === tab.key ? "rgba(116,185,255,0.1)" : "transparent",
+                color: activeTab === tab.key ? "#74b9ff" : "#636e72",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontFamily: "inherit",
+                fontWeight: activeTab === tab.key ? "700" : "400",
+                transition: "all 0.2s",
+                }}
+                >
+                {tab.label} {tab.count !== null && <span style={{ opacity: 0.6 }}>({tab.count})</span>}
+            </button>
+            ))}
+        </div>
+    </div>
+
+    <div style={{ display: "flex" , minHeight: "calc(100vh - 100px)" }}>
+        {/* Sidebar */}
+        {activeTab !== "json" && (
+        <div style={{ width: "220px" , minWidth: "220px" , background: "#0d1117" , borderRight: "1px solid #1e3a5f" ,
+            padding: "16px 0" , overflowY: "auto" , }}>
+            <div style={{ padding: "0 12px 12px" }}>
+                <input placeholder="Buscar tabla..." value={searchTerm} onChange={(e)=> setSearchTerm(e.target.value)}
+                style={{
+                width: "100%",
+                padding: "8px 10px",
+                background: "#1a1f2e",
+                border: "1px solid #1e3a5f",
+                borderRadius: "6px",
+                color: "#dfe6e9",
+                fontSize: "12px",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+                outline: "none",
+                }}
+                />
+            </div>
+            {filtered.map((table) => (
+            <div key={table} onClick={()=> setSelectedTable(table)}
+                style={{
+                padding: "10px 16px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: selectedTable === table ? "rgba(116,185,255,0.08)" : "transparent",
+                borderLeft: selectedTable === table ? `3px solid ${DB_SCHEMA[table].color}` : "3px solid transparent",
+                transition: "all 0.15s",
+                }}
+                >
+                <span style={{ fontSize: "14px" }}>{DB_SCHEMA[table].icon}</span>
+                <div>
+                    <div style={{ fontSize: "12px" , fontWeight: selectedTable===table ? "700" : "400" , color:
+                        selectedTable===table ? "#fff" : "#b2bec3" }}>
+                        {table}
+                    </div>
+                    <div style={{ fontSize: "10px" , color: "#636e72" }}>
+                        {Object.keys(DB_SCHEMA[table].fields).length} campos
+                    </div>
+                </div>
+            </div>
+            ))}
+        </div>
+        )}
+
+        {/* Main Content */}
+        <div style={{ flex: 1, overflowY: "auto" , padding: "24px" }}>
+
+            {/* TABLES TAB */}
+            {activeTab === "tables" && (
+            <div>
+                {selectedTable ? (
+                <div>
+                    {/* Table Detail */}
+                    <div style={{ display: "flex" , alignItems: "center" , gap: "12px" , marginBottom: "20px" }}>
+                        <button onClick={()=> setSelectedTable(null)}
+                            style={{ background: "none", border: "1px solid #1e3a5f", borderRadius: "6px", color:
+                            "#74b9ff", padding: "6px 12px", cursor: "pointer", fontFamily: "inherit", fontSize: "12px"
+                            }}
+                            >
+                            ← Volver
+                        </button>
+                        <div style={{ width: "6px" , height: "6px" , borderRadius: "50%" , background:
+                            DB_SCHEMA[selectedTable].color, boxShadow: `0 0 12px ${DB_SCHEMA[selectedTable].color}`
+                            }} />
+                        <h2 style={{ margin: 0, fontSize: "20px" , color: "#fff" }}>
+                            {DB_SCHEMA[selectedTable].icon} {selectedTable}
+                        </h2>
+                    </div>
+
+                    {/* Fields */}
+                    <div style={{ background: "#0d1117" , border: `1px solid ${DB_SCHEMA[selectedTable].color}33`,
+                        borderRadius: "12px" , overflow: "hidden" , marginBottom: "24px" , }}>
+                        <div style={{ padding: "14px 20px" , borderBottom: "1px solid #1e3a5f" , fontSize: "11px" ,
+                            color: "#636e72" , letterSpacing: "2px" , textTransform: "uppercase" }}>
+                            Estructura de campos
+                        </div>
+                        <table style={{ width: "100%" , borderCollapse: "collapse" }}>
+                            <thead>
+                                <tr style={{ background: "#0a0e1a" }}>
+                                    {["Campo", "Tipo", "Detalle"].map((h) => (
+                                    <th key={h} style={{ padding: "10px 20px" , textAlign: "left" , fontSize: "11px" ,
+                                        color: "#636e72" , letterSpacing: "1px" , textTransform: "uppercase" ,
+                                        fontWeight: "400" }}>
+                                        {h}
+                                    </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(DB_SCHEMA[selectedTable].fields).map(([field, info], i) => (
+                                <tr key={field} style={{ borderTop: "1px solid #1a1f2e" , background: i % 2===0
+                                    ? "transparent" : "#080b14" }}>
+                                    <td style={{ padding: "10px 20px" , fontSize: "13px" , color: "#dfe6e9" ,
+                                        fontWeight: info.type==="PK" ? "700" : "400" }}>
+                                        {info.type === "PK" && <span style={{ color: "#FFD93D" , marginRight: "6px"
+                                            }}>🔑</span>}
+                                        {info.type === "FK" && <span style={{ color: "#74b9ff" , marginRight: "6px"
+                                            }}>🔗</span>}
+                                        {field}
+                                    </td>
+                                    <td style={{ padding: "10px 20px" }}>
+                                        <span style={{ padding: "2px 8px" , borderRadius: "4px" , fontSize: "11px" ,
+                                            fontWeight: "700" , background: `${TYPE_COLORS[info.type]}22`, color:
+                                            TYPE_COLORS[info.type] || "#dfe6e9" , border: `1px solid
+                                            ${TYPE_COLORS[info.type]}44`, }}>
+                                            {info.type}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: "10px 20px" , fontSize: "12px" , color: "#636e72" }}>
+                                        {info.desc}
+                                    </td>
+                                </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Relations for this table */}
+                    <div style={{ background: "#0d1117" , border: "1px solid #1e3a5f" , borderRadius: "12px" ,
+                        overflow: "hidden" , }}>
+                        <div style={{ padding: "14px 20px" , borderBottom: "1px solid #1e3a5f" , fontSize: "11px" ,
+                            color: "#636e72" , letterSpacing: "2px" , textTransform: "uppercase" }}>
+                            Relaciones ({getRelationsFor(selectedTable).length})
+                        </div>
+                        {getRelationsFor(selectedTable).length === 0 ? (
+                        <div style={{ padding: "20px" , color: "#636e72" , fontSize: "13px" }}>Sin relaciones externas
+                        </div>
+                        ) : (
+                        getRelationsFor(selectedTable).map((rel, i) => (
+                        <div key={i} style={{ padding: "12px 20px" , borderTop: i> 0 ? "1px solid #1a1f2e" : "none",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            fontSize: "13px",
+                            }}>
+                            <span style={{ padding: "3px 10px" , borderRadius: "20px" , fontSize: "11px" ,
+                                fontWeight: "700" , background: rel.from===selectedTable ? "rgba(253,114,114,0.15)"
+                                : "rgba(116,185,255,0.15)" , color: rel.from===selectedTable ? "#fd7272" : "#74b9ff" ,
+                                }}>
+                                {rel.from === selectedTable ? "SALIENTE" : "ENTRANTE"}
+                            </span>
+                            <span style={{ color: "#a29bfe" , fontWeight: "700" }}>{rel.from}</span>
+                            <span style={{ color: "#636e72" }}>→</span>
+                            <span style={{ color: "#55efc4" , fontWeight: "700" }}>{rel.to}</span>
+                            <span style={{ color: "#636e72" , fontSize: "11px" }}>({rel.label})</span>
+                        </div>
+                        ))
+                        )}
+                    </div>
+                </div>
+                ) : (
+                /* Grid of all tables */
+                <div>
+                    <div style={{ marginBottom: "20px" , color: "#636e72" , fontSize: "13px" }}>
+                        Selecciona una tabla para ver detalles · {filtered.length} tablas
+                    </div>
+                    <div style={{ display: "grid" , gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" ,
+                        gap: "16px" }}>
+                        {filtered.map((table) => (
+                        <div key={table} onClick={()=> setSelectedTable(table)}
+                            style={{
+                            background: "#0d1117",
+                            border: "1px solid #1e3a5f",
+                            borderRadius: "12px",
+                            padding: "16px",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                            borderTop: `3px solid ${DB_SCHEMA[table].color}`,
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = DB_SCHEMA[table].color;
+                            e.currentTarget.style.transform = "translateY(-2px)"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#1e3a5f";
+                            e.currentTarget.style.borderTopColor = DB_SCHEMA[table].color;
+                            e.currentTarget.style.transform = "translateY(0)"; }}
+                            >
+                            <div style={{ display: "flex" , alignItems: "center" , gap: "10px" , marginBottom: "12px"
+                                }}>
+                                <span style={{ fontSize: "20px" }}>{DB_SCHEMA[table].icon}</span>
+                                <div>
+                                    <div style={{ fontWeight: "700" , color: "#fff" , fontSize: "14px" }}>{table}</div>
+                                    <div style={{ fontSize: "11px" , color: "#636e72" }}>
+                                        {Object.keys(DB_SCHEMA[table].fields).length} campos
+                                    </div>
+                                </div>
+                                <div style={{ marginLeft: "auto" , width: "8px" , height: "8px" , borderRadius: "50%" ,
+                                    background: DB_SCHEMA[table].color, boxShadow: `0 0 8px ${DB_SCHEMA[table].color}`,
+                                    }} />
+                            </div>
+                            <div style={{ display: "flex" , flexWrap: "wrap" , gap: "4px" }}>
+                                {Object.entries(DB_SCHEMA[table].fields).slice(0, 5).map(([f, info]) => (
+                                <span key={f} style={{ padding: "2px 6px" , borderRadius: "4px" , fontSize: "10px" ,
+                                    background: info.type==="PK" ? "#FFD93D22" : info.type==="FK" ? "#74b9ff22"
+                                    : "#1a1f2e" , color: info.type==="PK" ? "#FFD93D" : info.type==="FK" ? "#74b9ff"
+                                    : "#636e72" , }}>
+                                    {f}
+                                </span>
+                                ))}
+                                {Object.keys(DB_SCHEMA[table].fields).length > 5 && (
+                                <span style={{ padding: "2px 6px" , fontSize: "10px" , color: "#636e72" }}>
+                                    +{Object.keys(DB_SCHEMA[table].fields).length - 5} más
+                                </span>
+                                )}
+                            </div>
+                            <div style={{ marginTop: "10px" , fontSize: "11px" , color: "#4a5568" }}>
+                                {getRelationsFor(table).length} relaciones
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+                </div>
+                )}
+            </div>
+            )}
+
+            {/* RELATIONS TAB */}
+            {activeTab === "relations" && (
+            <div>
+                <div style={{ marginBottom: "20px" , color: "#636e72" , fontSize: "13px" }}>
+                    Todas las referencias entre tablas ({RELATIONS.length} relaciones)
+                </div>
+
+                {/* Flow diagram text */}
+                <div style={{ background: "#0d1117" , border: "1px solid #1e3a5f" , borderRadius: "12px" ,
+                    padding: "20px" , marginBottom: "24px" , }}>
+                    <div style={{ fontSize: "11px" , color: "#636e72" , letterSpacing: "2px" ,
+                        textTransform: "uppercase" , marginBottom: "16px" }}>
+                        Flujo Principal
+                    </div>
+                    <div style={{ display: "flex" , alignItems: "center" , flexWrap: "wrap" , gap: "8px" ,
+                        fontSize: "13px" }}>
+                        {["instituciones", "→", "InstitucionPlan", "↔", "planes", "→", "pagos", "|", "instituciones",
+                        "→", "usuarios", "→", "cursos", "→", "clases", "→", "MaterialEstudio", "|", "cursos", "→",
+                        "evaluaciones", "→", "preguntas", "|", "evaluaciones", "→", "resultados", "←", "usuarios", "|",
+                        "cursos", "→", "matriculas", "←", "usuarios", "|", "cursos", "→", "reportes", "←",
+                        "usuarios"].map((item, i) => (
+                        <span key={i} style={{ color: item==="→" || item==="↔" || item==="←" ? "#fd7272" : item==="|"
+                            ? "#2d3436" : DB_SCHEMA[item] ? DB_SCHEMA[item].color : "#636e72" , fontWeight:
+                            DB_SCHEMA[item] ? "700" : "400" , padding: item==="|" ? "0 8px" : "0" , }}>
+                            {item}
+                        </span>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Relations list */}
+                <div style={{ display: "grid" , gap: "8px" }}>
+                    {RELATIONS.map((rel, i) => (
+                    <div key={i} style={{ background: "#0d1117" , border: "1px solid #1e3a5f" , borderRadius: "8px" ,
+                        padding: "14px 20px" , display: "flex" , alignItems: "center" , gap: "12px" , fontSize: "13px" ,
+                        }}>
+                        <span style={{ color: "#636e72" , fontSize: "11px" , minWidth: "24px" }}>{String(i +
+                            1).padStart(2, "0")}</span>
+                        <span style={{ padding: "4px 12px" , borderRadius: "6px" , fontWeight: "700" , background:
+                            `${DB_SCHEMA[rel.from]?.color || "#636e72" }22`, color: DB_SCHEMA[rel.from]?.color
+                            || "#636e72" , border: `1px solid ${DB_SCHEMA[rel.from]?.color || "#636e72" }44`, }}>
+                            {DB_SCHEMA[rel.from]?.icon} {rel.from}
+                        </span>
+                        <span style={{ color: "#fd7272" , fontSize: "18px" }}>→</span>
+                        <span style={{ padding: "4px 12px" , borderRadius: "6px" , fontWeight: "700" , background:
+                            `${DB_SCHEMA[rel.to]?.color || "#636e72" }22`, color: DB_SCHEMA[rel.to]?.color || "#636e72"
+                            , border: `1px solid ${DB_SCHEMA[rel.to]?.color || "#636e72" }44`, }}>
+                            {DB_SCHEMA[rel.to]?.icon} {rel.to}
+                        </span>
+                        <span style={{ color: "#636e72" , fontSize: "11px" , marginLeft: "auto" }}>{rel.label}</span>
+                    </div>
+                    ))}
+                </div>
+            </div>
+            )}
+
+            {/* JSON TAB */}
+            {activeTab === "json" && (
+            <div>
+                <div style={{ marginBottom: "20px" }}>
+                    <div style={{ fontSize: "11px" , color: "#74b9ff" , letterSpacing: "2px" ,
+                        textTransform: "uppercase" , marginBottom: "8px" }}>
+                        Modelo JSON Completo · Frontend Ready
+                    </div>
+                    <p style={{ color: "#636e72" , fontSize: "13px" , margin: 0 }}>
+                        Estructura de datos lista para consumir desde el frontend. Incluye institución completa con
+                        plan, cursos, profesor, estudiantes, clases, materiales, evaluaciones, preguntas, resultados y
+                        reportes.
+                    </p>
+                </div>
+
+                <div style={{ background: "#0a0c14" , border: "1px solid #1e3a5f" , borderRadius: "12px" ,
+                    overflow: "hidden" , }}>
+                    <div style={{ padding: "12px 20px" , borderBottom: "1px solid #1e3a5f" , display: "flex" ,
+                        alignItems: "center" , justifyContent: "space-between" , background: "#0d1117" , }}>
+                        <span style={{ fontSize: "12px" , color: "#636e72" }}>📦 institucion_full_response.json</span>
+                        <button onClick={()=> {
+                            navigator.clipboard.writeText(JSON.stringify(SAMPLE_JSON, null, 2));
+                            }}
+                            style={{
+                            padding: "4px 12px",
+                            background: "rgba(116,185,255,0.1)",
+                            border: "1px solid #74b9ff44",
+                            borderRadius: "6px",
+                            color: "#74b9ff",
+                            cursor: "pointer",
+                            fontSize: "11px",
+                            fontFamily: "inherit",
+                            }}
+                            >
+                            📋 Copiar JSON
+                        </button>
+                    </div>
+                    <div style={{ padding: "20px" , overflowX: "auto" , fontSize: "13px" , lineHeight: "1.6" }}>
+                        <JsonRenderer data={SAMPLE_JSON} />
+                    </div>
+                </div>
+
+                {/* Endpoints suggestion */}
+                <div style={{ marginTop: "24px" , background: "#0d1117" , border: "1px solid #1e3a5f" ,
+                    borderRadius: "12px" , overflow: "hidden" , }}>
+                    <div style={{ padding: "14px 20px" , borderBottom: "1px solid #1e3a5f" , fontSize: "11px" ,
+                        color: "#636e72" , letterSpacing: "2px" , textTransform: "uppercase" }}>
+                        Endpoints sugeridos para el Front
+                    </div>
+                    <div style={{ padding: "16px 20px" , display: "grid" , gap: "10px" }}>
+                        {[
+                        { method: "GET", path: "/api/instituciones/:id/full", desc: "Institución + plan + cursos
+                        completos" },
+                        { method: "GET", path: "/api/cursos/:id/estudiantes", desc: "Lista de estudiantes del curso" },
+                        { method: "GET", path: "/api/cursos/:id/evaluaciones", desc: "Evaluaciones con preguntas y
+                        resultados" },
+                        { method: "GET", path: "/api/estudiantes/:id/resultados", desc: "Resultados de un estudiante" },
+                        { method: "POST", path: "/api/matriculas", desc: "Inscribir estudiante a curso" },
+                        { method: "POST", path: "/api/resultados", desc: "Guardar resultado de evaluación" },
+                        { method: "GET", path: "/api/reportes/:codigo_certificado", desc: "Obtener certificado por
+                        código" },
+                        ].map((ep, i) => (
+                        <div key={i} style={{ display: "flex" , alignItems: "center" , gap: "12px" , fontSize: "13px"
+                            }}>
+                            <span style={{ padding: "3px 10px" , borderRadius: "4px" , fontSize: "11px" ,
+                                fontWeight: "700" , minWidth: "44px" , textAlign: "center" , background:
+                                ep.method==="GET" ? "rgba(0,184,148,0.15)" : "rgba(116,185,255,0.15)" , color:
+                                ep.method==="GET" ? "#00b894" : "#74b9ff" , }}>
+                                {ep.method}
+                            </span>
+                            <code style={{ color: "#a29bfe" , fontSize: "12px" }}>{ep.path}</code>
+                            <span style={{ color: "#636e72" , fontSize: "12px" }}>— {ep.desc}</span>
+                        </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            )}
+        </div>
+    </div>
+</div>
+);
+}
+\"npx prisma studio\"

@@ -1,0 +1,333 @@
+npx prisma migrate dev --name ''
+npx prisma migrate deploy
+tengo este modelo de datos  creado en dbdiagram
+Enum EstadoActivo {
+  activo
+  inactive
+}
+
+Enum EstadoGeneral {
+  activo
+  inactivo
+}
+
+Enum IntervaloPlan {
+  mensual
+  anual
+  trial
+}
+
+Enum EstadoSuscripcion {
+  activo
+  cancelado
+  expirado
+}
+
+Enum MetodoPago {
+  transferencia
+  stripe
+  paypal
+  manual
+}
+
+Enum TipoPago {
+  suscripcion
+  renovacion
+  upgrade
+}
+
+Enum EstadoPago {
+  pendiente
+  verificando
+  exitoso
+  fallido
+}
+
+Enum RolUsuario {
+  profesor
+  estudiante
+}
+
+Enum EstadoSesion {
+  activo
+  inactivo
+}
+
+Enum CategoriaCurso {
+  curso1
+  curso2
+  curso3
+  curso4
+  curso5
+}
+
+Enum ModuloCurso {
+  Princiante
+  Intermedio
+  Avanzado
+}
+
+Enum EstadoCurso {
+  activo
+  finalizado
+  cancelado
+}
+
+Enum EstadoClase {
+  programada
+  realizada
+  cancelada
+}
+
+Enum ClaseActual {
+  clase_1
+  clase_2
+  clase_3
+  clase_4
+  clase_5
+  clase_6
+  clase_7
+  clase_8
+  clase_9
+  clase_10
+}
+
+Enum TipoMaterial {
+  audio
+  video
+  excel
+  pdf
+  word
+  otro
+}
+
+Enum EstadoMaterial {
+  activo
+  inactivo
+}
+
+Enum EstadoMatricula {
+  activo
+  finalizado
+  retirado
+}
+
+Table Institucion {
+  id int [pk, increment]
+  email varchar [unique]
+  passwordHash varchar
+  nombreInstitucion varchar
+  nit varchar [unique]
+  direccion text
+  telefono varchar
+  pais varchar
+  ciudad varchar
+  suscripcion int
+  codigoOTP varchar
+  activo EstadoActivo
+  fechaRegistro datetime
+}
+
+Table Plan {
+  id int [pk, increment]
+  nombre varchar
+  codigo varchar
+  price decimal
+  currency varchar
+  interval IntervaloPlan
+  maxDays int
+  createdAt datetime
+  estado EstadoGeneral
+}
+
+Table Usuario {
+  id int [pk, increment]
+  nombreCompleto varchar
+  email varchar [unique]
+  passwordHash varchar
+  telefono varchar
+  ciudad varchar
+  rol RolUsuario
+  fechaNacimiento datetime
+  nivelEducativo varchar
+  institucionId int
+  codigoOTP varchar
+  activo EstadoActivo
+  fechaRegistro datetime
+}
+
+Table InstitucionPlan {
+  id int [pk, increment]
+  institucionId int
+  planId int
+  periodStart datetime
+  periodEnd datetime
+  estado EstadoSuscripcion
+}
+
+Table Pago {
+  id int [pk, increment]
+  institucionId int
+  planId int
+  institucionPlanId int
+  monto decimal
+  currency varchar
+  metodoPago MetodoPago
+  tipoPago TipoPago
+  estado EstadoPago
+  referenciaPago varchar [unique]
+  banco varchar
+  reciboFile varchar
+  comprobanteUrl text
+  fechaPago datetime
+  fechaVerificacion datetime
+}
+
+Table Session {
+  id int [pk, increment]
+  ip varchar
+  usuarioId int
+  fecha datetime
+  navegador varchar
+  status EstadoSesion
+}
+
+Table Curso {
+  id int [pk, increment]
+  institucionId int
+  profesorId int
+  img varchar
+  nombreCurso varchar
+  categoria CategoriaCurso
+  modulo ModuloCurso
+  idioma varchar
+  descripcion text
+  fechaInicio datetime
+  fechaFin datetime
+  estado EstadoCurso
+  fechaCreacion datetime
+}
+
+Table Clase {
+  id int [pk, increment]
+  cursoId int
+  estudianteId int
+  img varchar
+  titulo varchar
+  descripcion text
+  fechaClase datetime
+  linkMeet varchar
+  duracionMinutos int
+  claseActual ClaseActual
+  estadoClase EstadoClase
+}
+
+Table MaterialEstudio {
+  id int [pk, increment]
+  titulo varchar
+  detalle text
+  linkMaterial varchar
+  tipo TipoMaterial
+  claseActual ClaseActual
+  claseMaterialId int
+  estadoMaterial EstadoMaterial
+}
+
+Table Evaluacion {
+  id int [pk, increment]
+  cursoId int
+  titulo varchar
+  descripcion text
+  codigoEvaluacion varchar
+  fechaCreacion datetime
+  fechaLimite datetime
+  porcentajeCurso decimal
+}
+
+Table Pregunta {
+  id int [pk, increment]
+  evaluacionId int
+  pregunta text
+  respuestaA varchar
+  respuestaB varchar
+  respuestaC varchar
+  respuestaD varchar
+  respuestaCorrecta varchar
+  puntaje float
+  status EstadoGeneral
+}
+
+Table Resultado {
+  id int [pk, increment]
+  evaluacionId int
+  estudianteId int
+  respuestasJson text
+  puntajeObtenido decimal
+  fechaRealizacion datetime
+}
+
+Table Matricula {
+  id int [pk, increment]
+  cursoId int
+  estudianteId int
+  fechaMatricula datetime
+  estado EstadoMatricula
+}
+
+Table Reporte {
+  id int [pk, increment]
+  cursoId int
+  estudianteId int
+  fechaGeneracion datetime
+  promedioFinal decimal
+  aprobado boolean
+  codigoCertificado varchar [unique]
+  pdfUrl text
+}
+
+//////////////////////
+// RELACIONES
+//////////////////////
+
+Ref: Usuario.institucionId > Institucion.id
+
+Ref: Curso.institucionId > Institucion.id
+Ref: Curso.profesorId > Usuario.id
+
+Ref: Session.usuarioId > Usuario.id
+
+Ref: InstitucionPlan.institucionId > Institucion.id
+Ref: InstitucionPlan.planId > Plan.id
+
+Ref: Pago.institucionId > Institucion.id
+Ref: Pago.planId > Plan.id
+Ref: Pago.institucionPlanId > InstitucionPlan.id
+
+Ref: Clase.cursoId > Curso.id
+
+Ref: MaterialEstudio.claseMaterialId > Clase.id
+
+Ref: Evaluacion.cursoId > Curso.id
+
+Ref: Pregunta.evaluacionId > Evaluacion.id
+
+Ref: Resultado.evaluacionId > Evaluacion.id
+Ref: Resultado.estudianteId > Usuario.id
+
+Ref: Matricula.cursoId > Curso.id
+Ref: Matricula.estudianteId > Usuario.id
+
+Ref: Reporte.cursoId > Curso.id
+Ref: Reporte.estudianteId > Usuario.id
+
+requerimientos:
+
+necesito crear crud con prisma, express, zod validacion datos, para crear institucionId
+login(email y password, crear token)
+post(registrar no pedita token)
+get(solo muestre estado activo(activo))
+post(el crear insert table institucion y plan(observacion maxDays 15)todo activo y status activo)
+patch (cambiara el campo "activo" a inactivo)
+
+
+Necesito Tambien crear controlador para table Usuario y cuando haga login registro etc , solo mostrar usuarios activo=> activo deben insertarse los datos en la table Session
